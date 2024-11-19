@@ -2,6 +2,7 @@ use std::time::Duration;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Item {
     pub id: Uuid,
     pub table_id: String,

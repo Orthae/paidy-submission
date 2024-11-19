@@ -9,13 +9,21 @@ use crate::domain::repository::ItemRepository;
 
 const QUERY_ITEM: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE id = $1";
 const QUERY_TABLE: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE table_id = $1";
+const INSERT_ITEM: &str = "INSERT INTO items (id, table_id, name, preparation_time) VALUES ($1, $2, $3, $4)";
+const DELETE_ITEM: &str = "DELETE FROM items WHERE id = $1";
 
-struct ItemRepositoryImpl {
+pub struct ItemRepositoryImpl {
     pool: Pool<Postgres>
 }
 
+impl ItemRepositoryImpl {
+    pub fn new(pool: Pool<Postgres>) -> Self {
+        ItemRepositoryImpl { pool }
+    }
+}
+
 impl ItemRepository for ItemRepositoryImpl {
-    async fn find_item(&self, item_id: Uuid) -> Result<Option<Item>> {
+    async fn find_item(&self, item_id: &Uuid) -> Result<Option<Item>> {
         sqlx::query(QUERY_ITEM)
             .bind(item_id)
             .fetch_optional(&self.pool)
@@ -25,7 +33,7 @@ impl ItemRepository for ItemRepositoryImpl {
             .transpose()
     }
 
-    async fn find_items_by_table(&self, table_id: String) -> Result<Vec<Item>> {
+    async fn find_items_by_table(&self, table_id: &String) -> Result<Vec<Item>> {
         sqlx::query(QUERY_TABLE)
             .bind(table_id)
             .fetch_all(&self.pool)
@@ -36,12 +44,40 @@ impl ItemRepository for ItemRepositoryImpl {
             .collect()
     }
 
-    async fn save_items(&self, item: Vec<Item>) -> Result<()> {
-        todo!()
+    async fn save_items(&self, items: &Vec<Item>) -> Result<()> {
+        let mut transaction = self
+            .pool
+            .begin()
+            .await
+            .inspect_err(|e| error!("Failed to begin transaction. Error: {:?}", e))?;
+
+        for entity in items {
+            sqlx::query(INSERT_ITEM)
+                .bind(&entity.id)
+                .bind(&entity.table_id)
+                .bind(&entity.name)
+                .bind(&entity.preparation_time)
+                .execute(&mut *transaction)
+                .await
+                .inspect_err(|e| error!("Inserting item failed. Error: {:?}", e))?;
+        }
+
+        transaction
+            .commit()
+            .await
+            .inspect_err(|e| error!("Failed to commit transaction. Error: {:?}", e))?;
+
+        Ok(())
     }
 
-    async fn delete_item(&self, item_id: Uuid) -> Result<()> {
-        todo!()
+    async fn delete_item(&self, item_id: &Uuid) -> Result<()> {
+        sqlx::query(DELETE_ITEM)
+            .bind(item_id)
+            .execute(&self.pool)
+            .await
+            .inspect_err(|e| error!("Failed to delete item. Error: {:?}", e))?;
+
+        Ok(())
     }
 }
 
@@ -60,7 +96,7 @@ impl From<sqlx::Error> for PostgresRepositoryError {
 impl TryFrom<PgRow> for Item {
     type Error = anyhow::Error;
 
-    fn try_from(row: PgRow) -> std::result::Result<Self, Self::Error> {
+    fn try_from(row: PgRow) -> Result<Self> {
         let item: Item = Item {
             id: row.try_get(0)?,
             table_id: row.try_get(1)?,
