@@ -1,11 +1,9 @@
-use crate::domain::item::Item;
-use crate::domain::repository::ItemRepository;
-use anyhow::Result;
+use crate::domain::item::{Item, ItemValidationError};
+use crate::domain::repository::{ItemRepository, RepositoryError};
 use async_trait::async_trait;
 use log::error;
 use sqlx::postgres::PgRow;
 use sqlx::{Pool, Postgres, Row};
-use thiserror::Error;
 use uuid::Uuid;
 
 const QUERY_ITEM: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE id = $1";
@@ -26,7 +24,7 @@ impl ItemRepositoryImpl {
 
 #[async_trait]
 impl ItemRepository for ItemRepositoryImpl {
-    async fn find_item(&self, item_id: &Uuid) -> Result<Option<Item>> {
+    async fn find_item(&self, item_id: &Uuid) -> Result<Option<Item>, RepositoryError> {
         sqlx::query(QUERY_ITEM)
             .bind(item_id)
             .fetch_optional(&self.pool)
@@ -36,7 +34,7 @@ impl ItemRepository for ItemRepositoryImpl {
             .transpose()
     }
 
-    async fn find_items_by_table(&self, table_id: &String) -> Result<Vec<Item>> {
+    async fn find_items_by_table(&self, table_id: &i64) -> Result<Vec<Item>, RepositoryError> {
         sqlx::query(QUERY_TABLE)
             .bind(table_id)
             .fetch_all(&self.pool)
@@ -47,7 +45,7 @@ impl ItemRepository for ItemRepositoryImpl {
             .collect()
     }
 
-    async fn save_items(&self, items: &Vec<Item>) -> Result<()> {
+    async fn save_items(&self, items: &Vec<Item>) -> Result<(), RepositoryError> {
         let mut transaction = self
             .pool
             .begin()
@@ -73,7 +71,7 @@ impl ItemRepository for ItemRepositoryImpl {
         Ok(())
     }
 
-    async fn delete_item(&self, item_id: &Uuid) -> Result<()> {
+    async fn delete_item(&self, item_id: &Uuid) -> Result<(), RepositoryError> {
         sqlx::query(DELETE_ITEM)
             .bind(item_id)
             .execute(&self.pool)
@@ -84,28 +82,28 @@ impl ItemRepository for ItemRepositoryImpl {
     }
 }
 
-#[derive(Debug, Error)]
-enum PostgresRepositoryError {
-    #[error("Internal repository error: {0}")]
-    InternalError(sqlx::Error),
+impl From<sqlx::Error> for RepositoryError {
+    fn from(error: sqlx::Error) -> Self {
+        RepositoryError::InternalRepositoryError(error.to_string())
+    }
 }
 
-impl From<sqlx::Error> for PostgresRepositoryError {
-    fn from(error: sqlx::Error) -> Self {
-        PostgresRepositoryError::InternalError(error)
+impl From<ItemValidationError> for RepositoryError {
+    fn from(error: ItemValidationError) -> Self {
+        RepositoryError::ValidationError(error)
     }
 }
 
 impl TryFrom<PgRow> for Item {
-    type Error = anyhow::Error;
+    type Error = RepositoryError;
 
-    fn try_from(row: PgRow) -> Result<Self> {
-        let item: Item = Item {
-            id: row.try_get(0)?,
-            table_id: row.try_get(1)?,
-            name: row.try_get(2)?,
-            preparation_time: row.try_get(3)?,
-        };
+    fn try_from(row: PgRow) -> Result<Self, RepositoryError> {
+        let id: Uuid = row.try_get(0)?;
+        let table_id: i64 = row.try_get(1)?;
+        let name: String = row.try_get(2)?;
+        let preparation_time = row.try_get(3)?;
+
+        let item = Item::try_new(id, table_id, name, preparation_time)?;
 
         Ok(item)
     }

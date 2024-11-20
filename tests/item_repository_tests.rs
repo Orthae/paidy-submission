@@ -1,4 +1,3 @@
-use paidy_submission::domain::item::Item;
 use paidy_submission::domain::repository::ItemRepository;
 use paidy_submission::infrastructure::connection_factory::{
     DatabaseConfiguration, PostgresConnectionPoolFactory,
@@ -10,6 +9,7 @@ use testcontainers_modules::postgres::Postgres;
 
 mod repository_tests {
     use super::*;
+    use paidy_submission::domain::item_factory::ItemFactory;
 
     struct RepositoryTestContext {
         repository: ItemRepositoryImpl,
@@ -50,7 +50,8 @@ mod repository_tests {
     #[tokio::test]
     async fn delete_unexisting_item() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = Item::new("Pierogi".to_string(), "1".to_string());
+        let item = ItemFactory::try_create(1, "Pierogi".to_string())
+            .expect("Failed to create item");
 
         context
             .repository
@@ -62,7 +63,8 @@ mod repository_tests {
     #[tokio::test]
     async fn delete_existing_item() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = Item::new("Pierogi".to_string(), "1".to_string());
+        let item = ItemFactory::try_create(1, "Pierogi".to_string())
+            .expect("Failed to create item");
 
         context
             .repository
@@ -89,7 +91,8 @@ mod repository_tests {
     async fn create_item() {
         let context = RepositoryTestContext::create_test_context().await;
 
-        let item = Item::new("Pierogi".to_string(), "1".to_string());
+        let item = ItemFactory::try_create(1, "Pierogi".to_string())
+            .expect("Failed to create item");
 
         context
             .repository
@@ -110,7 +113,8 @@ mod repository_tests {
     #[tokio::test]
     async fn create_items_transaction_fail() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = Item::new("Pierogi".to_string(), "1".to_string());
+        let item = ItemFactory::try_create(1, "Pierogi".to_string())
+            .expect("Failed to create item");
 
         let save_result = context
             .repository
@@ -131,8 +135,10 @@ mod repository_tests {
     #[tokio::test]
     async fn create_items_transaction_same_table() {
         let context = RepositoryTestContext::create_test_context().await;
-        let first_item = Item::new("Pierogi".to_string(), "1".to_string());
-        let second_item = Item::new("Schabowy".to_string(), "1".to_string());
+        let first_item = ItemFactory::try_create(1, "Pierogi".to_string())
+            .expect("Failed to create item");
+        let second_item = ItemFactory::try_create(1, "Schabowy".to_string())
+            .expect("Failed to create item");
 
         context
             .repository
@@ -154,8 +160,10 @@ mod repository_tests {
     #[tokio::test]
     async fn create_items_different_tables() {
         let context = RepositoryTestContext::create_test_context().await;
-        let first_item = Item::new("Pierogi".to_string(), "1".to_string());
-        let second_item = Item::new("Schabowy".to_string(), "2".to_string());
+        let first_item = ItemFactory::try_create(1,"Pierogi".to_string())
+            .expect("Failed to create item");
+        let second_item = ItemFactory::try_create(2, "Schabowy".to_string())
+            .expect("Failed to create item");
 
         context
             .repository

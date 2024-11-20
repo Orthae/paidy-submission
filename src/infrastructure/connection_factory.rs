@@ -1,5 +1,5 @@
-use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use sqlx::{Pool, Postgres};
 
 pub struct DatabaseConfiguration {
     pub host: String,
@@ -19,7 +19,6 @@ impl PostgresConnectionPoolFactory {
             .database(&config.database)
             .username(&config.username)
             .password(&config.password);
-
 
         let pool = PgPoolOptions::new()
             .max_connections(10)
