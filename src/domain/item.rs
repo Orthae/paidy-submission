@@ -1,5 +1,6 @@
+use chrono::{DateTime, SubsecRound, Utc};
+use rand::Rng;
 use std::time::Duration;
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -12,13 +13,16 @@ pub struct Item {
 
 impl Item {
     pub fn new(table_id: String, name: String) -> Self {
-        let offset: u64 = (rand::random::<u64>() % 600) + 300;
-
         Item {
             id: Uuid::now_v7(),
             table_id,
             name,
-            preparation_time: Utc::now() + Duration::from_secs(offset)
+            preparation_time: Item::get_random_preparation_time(),
         }
+    }
+
+    fn get_random_preparation_time() -> DateTime<Utc> {
+        let offset = rand::thread_rng().gen_range(300..901);
+        Utc::now().round_subsecs(6) + Duration::from_secs(offset)
     }
 }

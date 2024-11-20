@@ -1,4 +1,3 @@
-use chrono::{Duration, DurationRound, Utc};
 use paidy_submission::domain::item::Item;
 use paidy_submission::domain::repository::ItemRepository;
 use paidy_submission::infrastructure::connection_factory::{
@@ -8,7 +7,6 @@ use paidy_submission::infrastructure::item_repository::ItemRepositoryImpl;
 use testcontainers::runners::AsyncRunner;
 use testcontainers::ContainerAsync;
 use testcontainers_modules::postgres::Postgres;
-use uuid::Uuid;
 
 mod repository_tests {
     use super::*;
@@ -48,33 +46,11 @@ mod repository_tests {
             }
         }
     }
-    
-    fn create_test_item() -> Item {
-        Item {
-            id: Uuid::now_v7(),
-            table_id: "table_id".to_string(),
-            name: "name".to_string(),
-            preparation_time: Utc::now()
-                .duration_round(Duration::microseconds(1))
-                .unwrap(),
-        }
-    }
-    
-    fn create_test_item_for_table(table_id: String) -> Item {
-        Item {
-            id: Uuid::now_v7(),
-            table_id: table_id.to_string(),
-            name: "name".to_string(),
-            preparation_time: Utc::now()
-                .duration_round(Duration::microseconds(1))
-                .unwrap(),
-        }
-    }
 
     #[tokio::test]
     async fn delete_unexisting_item() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = create_test_item();
+        let item = Item::new("Pierogi".to_string(), "1".to_string());
 
         context
             .repository
@@ -86,12 +62,11 @@ mod repository_tests {
     #[tokio::test]
     async fn delete_existing_item() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = create_test_item();
+        let item = Item::new("Pierogi".to_string(), "1".to_string());
 
-        let items = vec![item.clone()];
         context
             .repository
-            .save_items(&items)
+            .save_items(&vec![item.clone()])
             .await
             .expect("Failed to save item");
 
@@ -114,7 +89,7 @@ mod repository_tests {
     async fn create_item() {
         let context = RepositoryTestContext::create_test_context().await;
 
-        let item = create_test_item();
+        let item = Item::new("Pierogi".to_string(), "1".to_string());
 
         context
             .repository
@@ -135,10 +110,12 @@ mod repository_tests {
     #[tokio::test]
     async fn create_items_transaction_fail() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = create_test_item();
+        let item = Item::new("Pierogi".to_string(), "1".to_string());
 
-        let items = vec![item.clone(), item.clone()];
-        let save_result = context.repository.save_items(&items).await;
+        let save_result = context
+            .repository
+            .save_items(&vec![item.clone(), item.clone()])
+            .await;
 
         assert!(save_result.is_err());
 
@@ -152,13 +129,15 @@ mod repository_tests {
     }
 
     #[tokio::test]
-    async fn create_items_transaction() {
+    async fn create_items_transaction_same_table() {
         let context = RepositoryTestContext::create_test_context().await;
-        let first_item = create_test_item();
-        let second_item = create_test_item();
-        
-        let items = vec![first_item.clone(), second_item.clone()];
-        context.repository.save_items(&items).await
+        let first_item = Item::new("Pierogi".to_string(), "1".to_string());
+        let second_item = Item::new("Schabowy".to_string(), "1".to_string());
+
+        context
+            .repository
+            .save_items(&vec![first_item.clone(), second_item.clone()])
+            .await
             .expect("Failed to save items");
 
         let query_result = context
@@ -173,13 +152,21 @@ mod repository_tests {
     }
 
     #[tokio::test]
-    async fn create_items_transaction_different_tables() {
+    async fn create_items_different_tables() {
         let context = RepositoryTestContext::create_test_context().await;
-        let first_item = create_test_item_for_table("table1".to_string());
-        let second_item = create_test_item_for_table("table2".to_string());
+        let first_item = Item::new("Pierogi".to_string(), "1".to_string());
+        let second_item = Item::new("Schabowy".to_string(), "2".to_string());
 
-        let items = vec![first_item.clone(), second_item.clone()];
-        context.repository.save_items(&items).await
+        context
+            .repository
+            .save_items(&vec![first_item.clone()])
+            .await
+            .expect("Failed to save items");
+
+        context
+            .repository
+            .save_items(&vec![second_item.clone()])
+            .await
             .expect("Failed to save items");
 
         let first_table_query = context
