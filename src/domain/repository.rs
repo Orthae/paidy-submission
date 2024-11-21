@@ -12,7 +12,7 @@ pub trait ItemRepository {
     async fn delete_item(&self, item_id: &Uuid) -> Result<(), RepositoryError>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum RepositoryError {
     InternalRepositoryError(String),
     ValidationError(ItemValidationError),

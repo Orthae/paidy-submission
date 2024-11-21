@@ -29,7 +29,7 @@ impl Item {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error, Eq, PartialEq)]
 pub enum ItemValidationError {
     #[error("Name cannot be empty.")]
     EmptyName,

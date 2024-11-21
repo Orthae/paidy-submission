@@ -1,7 +1,7 @@
 CREATE TABLE items
 (
     id               UUID PRIMARY KEY,
-    table_id         VARCHAR NOT NULL,
+    table_id         BIGINT NOT NULL,
     name             VARCHAR NOT NULL,
     preparation_time TIMESTAMPTZ NOT NULL
 );

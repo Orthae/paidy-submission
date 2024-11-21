@@ -8,8 +8,12 @@ use testcontainers::ContainerAsync;
 use testcontainers_modules::postgres::Postgres;
 
 mod repository_tests {
+    use chrono::Utc;
+    use uuid::Uuid;
+    use paidy_submission::domain::item::{Item, ItemValidationError};
     use super::*;
     use paidy_submission::domain::item_factory::ItemFactory;
+    use paidy_submission::domain::repository::RepositoryError;
 
     struct RepositoryTestContext {
         repository: ItemRepositoryImpl,
@@ -38,7 +42,7 @@ mod repository_tests {
             };
 
             let pool = PostgresConnectionPoolFactory::new(config).await;
-            let repository = ItemRepositoryImpl::new(pool);
+            let repository = ItemRepositoryImpl::new(pool.clone());
 
             RepositoryTestContext {
                 repository,
@@ -195,4 +199,50 @@ mod repository_tests {
         assert_eq!(1, second_table_query.len());
         assert_eq!(second_item, second_table_query[0]);
     }
+    
+    #[tokio::test]
+    async fn get_item_invalid_table() {
+        let context = RepositoryTestContext::create_test_context().await;
+        let invalid_item = Item {
+            id: Uuid::now_v7(),
+            table_id: -1,
+            name: "Pierogi".to_string(),
+            preparation_time: Utc::now(),   
+        };
+        
+        context.repository.save_items(&vec![invalid_item.clone()])
+            .await
+            .expect("Failed to save item");
+        
+        let query_result = context.repository
+            .find_item(&invalid_item.id)
+            .await
+            .expect_err("Query did not fail");
+        
+        assert_eq!(query_result, RepositoryError::ValidationError(ItemValidationError::NegativeTableId));
+    }
+
+    #[tokio::test]
+    async fn get_item_invalid_name() {
+        let context = RepositoryTestContext::create_test_context().await;
+        let invalid_item = Item {
+            id: Uuid::now_v7(),
+            table_id: 1,
+            name: "".to_string(),
+            preparation_time: Utc::now(),
+        };
+
+        context.repository.save_items(&vec![invalid_item.clone()])
+            .await
+            .expect("Failed to save item");
+
+        let query_result = context.repository
+            .find_item(&invalid_item.id)
+            .await
+            .expect_err("Query did not fail");
+
+        assert_eq!(query_result, RepositoryError::ValidationError(ItemValidationError::EmptyName));
+    }
+    
+    
 }
