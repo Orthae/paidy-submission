@@ -84,7 +84,7 @@ mod repository_tests {
 
         let query_result = context
             .repository
-            .find_item(&item.id)
+            .find_item(&item.table_id, &item.id)
             .await
             .expect("Failed to find item");
 
@@ -106,7 +106,7 @@ mod repository_tests {
 
         let saved = context
             .repository
-            .find_item(&item.id)
+            .find_item(&item.table_id, &item.id)
             .await
             .expect("Failed to find item")
             .expect("Failed to find saved item");
@@ -129,7 +129,7 @@ mod repository_tests {
 
         let query_result = context
             .repository
-            .find_item(&item.id)
+            .find_item(&item.table_id, &item.id)
             .await
             .expect("Failed to find item");
 
@@ -215,11 +215,11 @@ mod repository_tests {
             .expect("Failed to save item");
         
         let query_result = context.repository
-            .find_item(&invalid_item.id)
+            .find_item(&invalid_item.table_id, &invalid_item.id)
             .await
             .expect_err("Query did not fail");
         
-        assert_eq!(query_result, RepositoryError::ValidationError(ItemValidationError::NegativeTableId));
+        assert_eq!(query_result, RepositoryError::MappingError(ItemValidationError::NegativeTableId.to_string()));
     }
 
     #[tokio::test]
@@ -237,11 +237,11 @@ mod repository_tests {
             .expect("Failed to save item");
 
         let query_result = context.repository
-            .find_item(&invalid_item.id)
+            .find_item(&invalid_item.table_id, &invalid_item.id)
             .await
             .expect_err("Query did not fail");
 
-        assert_eq!(query_result, RepositoryError::ValidationError(ItemValidationError::EmptyName));
+        assert_eq!(query_result, RepositoryError::MappingError(ItemValidationError::EmptyName.to_string()));
     }
     
     

@@ -6,7 +6,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{Pool, Postgres, Row};
 use uuid::Uuid;
 
-const QUERY_ITEM: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE id = $1";
+const QUERY_ITEM: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE id = $2 and table_id = $1";
 const QUERY_TABLE: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE table_id = $1";
 const INSERT_ITEM: &str = "INSERT INTO items (id, table_id, name, preparation_time) VALUES ($1, $2, $3, $4)";
 const DELETE_ITEM: &str = "DELETE FROM items WHERE id = $1";
@@ -24,8 +24,9 @@ impl ItemRepositoryImpl {
 
 #[async_trait]
 impl ItemRepository for ItemRepositoryImpl {
-    async fn find_item(&self, item_id: &Uuid) -> Result<Option<Item>, RepositoryError> {
+    async fn find_item(&self, table_id: &i64, item_id: &Uuid) -> Result<Option<Item>, RepositoryError> {
         sqlx::query(QUERY_ITEM)
+            .bind(table_id)
             .bind(item_id)
             .fetch_optional(&self.pool)
             .await
@@ -90,7 +91,7 @@ impl From<sqlx::Error> for RepositoryError {
 
 impl From<ItemValidationError> for RepositoryError {
     fn from(error: ItemValidationError) -> Self {
-        RepositoryError::ValidationError(error)
+        RepositoryError::MappingError(error.to_string())
     }
 }
 
@@ -103,7 +104,9 @@ impl TryFrom<PgRow> for Item {
         let name: String = row.try_get(2)?;
         let preparation_time = row.try_get(3)?;
 
-        let item = Item::try_new(id, table_id, name, preparation_time)?;
+        let item = Item::try_new(id, table_id, name, preparation_time)
+            .inspect_err(|e| error!("Failed to create item. Error: {:?}", e))
+            .map_err(|e| RepositoryError::MappingError(e.to_string()))?;
 
         Ok(item)
     }

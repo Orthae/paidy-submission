@@ -5,14 +5,21 @@ use chrono::{DateTime, Utc};
 use log::info;
 use std::sync::Arc;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[async_trait]
 pub trait ItemService {
     async fn create_items(&self, table_id: i64, command: CreateItemsCommand) -> Result<Vec<ItemModel>, ApplicationError>;
-    async fn get_item(&self, id: Uuid) -> Result<Option<ItemModel>, ApplicationError>;
+    async fn get_item(&self, table_id: i64, id: Uuid) -> Result<ItemModel, ApplicationError>;
     async fn get_items(&self, table_id: i64) -> Result<Vec<ItemModel>, ApplicationError>;
     async fn delete_item(&self, id: Uuid) -> Result<(), ApplicationError>;
+}
+
+pub enum ApplicationError {
+    InternalError,
+    ValidationError(String),
+    ResourceNotFound,
 }
 
 pub struct ItemServiceImpl {
@@ -33,6 +40,10 @@ impl ItemService for ItemServiceImpl {
         command: CreateItemsCommand,
     ) -> Result<Vec<ItemModel>, ApplicationError> {
         info!("Creating items from command: {:?}", command);
+        
+        if command.items.is_empty() {
+            return Err(ApplicationError::ValidationError("Items list is empty.".to_string()));
+        }
 
         let items = command
             .items
@@ -50,14 +61,15 @@ impl ItemService for ItemServiceImpl {
         Ok(models)
     }
 
-    async fn get_item(&self, id: Uuid) -> Result<Option<ItemModel>, ApplicationError> {
+    async fn get_item(&self, table_id: i64, id: Uuid) -> Result<ItemModel, ApplicationError> {
         info!("Getting item with id: {:?}", id);
     
         let item = self
             .repository
-            .find_item(&id)
+            .find_item(&table_id, &id)
             .await?
-            .map(|item| ItemModel::from(item));
+            .map(|item| ItemModel::from(item))
+            .ok_or(ApplicationError::ResourceNotFound)?;
     
         Ok(item)
     }
@@ -85,34 +97,29 @@ impl ItemService for ItemServiceImpl {
     }
 }
 
-#[derive(Debug)]
-pub enum ApplicationError {
-    RepositoryError(RepositoryError),
-    ItemValidationError(ItemValidationError),
-}
-
 impl From<RepositoryError> for ApplicationError {
-    fn from(value: RepositoryError) -> Self {
-        Self::RepositoryError(value)
+    fn from(_: RepositoryError) -> Self {
+        ApplicationError::InternalError
     }
 }
 
 impl From<ItemValidationError> for ApplicationError {
-    fn from(value: ItemValidationError) -> Self {
-        Self::ItemValidationError(value)
+    fn from(error: ItemValidationError) -> Self {
+        ApplicationError::ValidationError(error.to_string())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct CreateItemsCommand {
     pub items: Vec<CreateItemModel>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct CreateItemModel {
     pub name: String,
 }
 
+#[derive(Debug, Default, Serialize)]
 pub struct ItemModel {
     pub id: Uuid,
     pub table_id: i64,
