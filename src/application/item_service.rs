@@ -11,11 +11,12 @@ use uuid::Uuid;
 #[async_trait]
 pub trait ItemService {
     async fn create_items(&self, table_id: i64, command: CreateItemsCommand) -> Result<Vec<ItemModel>, ApplicationError>;
-    async fn get_item(&self, table_id: i64, id: Uuid) -> Result<ItemModel, ApplicationError>;
+    async fn get_item(&self, table_id: i64, item_id: Uuid) -> Result<ItemModel, ApplicationError>;
     async fn get_items(&self, table_id: i64) -> Result<Vec<ItemModel>, ApplicationError>;
-    async fn delete_item(&self, id: Uuid) -> Result<(), ApplicationError>;
+    async fn delete_item(&self, table_id: i64, item_id: Uuid) -> Result<(), ApplicationError>;
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum ApplicationError {
     InternalError,
     ValidationError(String),
@@ -24,11 +25,15 @@ pub enum ApplicationError {
 
 pub struct ItemServiceImpl {
     repository: Arc<dyn ItemRepository + Send + Sync>,
+    factory: Arc<dyn ItemFactory + Send + Sync>,
 }
 
 impl ItemServiceImpl {
-    pub fn new(repository: Arc<dyn ItemRepository + Send + Sync>) -> Self {
-        Self { repository }
+    pub fn new(
+        repository: Arc<dyn ItemRepository + Send + Sync>,
+        factory: Arc<dyn ItemFactory + Send + Sync>
+    ) -> Self {
+        Self { repository, factory }
     }
 }
 
@@ -48,7 +53,7 @@ impl ItemService for ItemServiceImpl {
         let items = command
             .items
             .into_iter()
-            .map(|model| ItemFactory::try_create(table_id, model.name))
+            .map(|model| self.factory.try_create(table_id, model.name))
             .collect::<Result<Vec<Item>, ItemValidationError>>()?;
 
         self.repository.save_items(&items).await?;
@@ -61,12 +66,12 @@ impl ItemService for ItemServiceImpl {
         Ok(models)
     }
 
-    async fn get_item(&self, table_id: i64, id: Uuid) -> Result<ItemModel, ApplicationError> {
-        info!("Getting item with id: {:?}", id);
+    async fn get_item(&self, table_id: i64, item_id: Uuid) -> Result<ItemModel, ApplicationError> {
+        info!("Getting item with id: {:?} for table: {:?}", item_id, table_id);
     
         let item = self
             .repository
-            .find_item(&table_id, &id)
+            .find_item(&table_id, &item_id)
             .await?
             .map(|item| ItemModel::from(item))
             .ok_or(ApplicationError::ResourceNotFound)?;
@@ -88,10 +93,10 @@ impl ItemService for ItemServiceImpl {
         Ok(models)
     }
     
-    async fn delete_item(&self, id: Uuid) -> Result<(), ApplicationError> {
-        info!("Deleting item with id: {:?}", id);
+    async fn delete_item(&self, table_id: i64, item_id: Uuid) -> Result<(), ApplicationError> {
+        info!("Deleting item with id: {:?} for table: {:?}", item_id, table_id);
     
-        self.repository.delete_item(&id).await?;
+        self.repository.delete_item(&table_id, &item_id).await?;
     
         Ok(())
     }

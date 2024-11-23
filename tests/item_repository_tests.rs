@@ -8,15 +8,16 @@ use testcontainers::ContainerAsync;
 use testcontainers_modules::postgres::Postgres;
 
 mod repository_tests {
-    use chrono::Utc;
-    use uuid::Uuid;
-    use paidy_submission::domain::item::{Item, ItemValidationError};
     use super::*;
-    use paidy_submission::domain::item_factory::ItemFactory;
+    use chrono::Utc;
+    use paidy_submission::domain::item::{Item, ItemValidationError};
+    use paidy_submission::domain::item_factory::{ItemFactory, ItemFactoryImpl};
     use paidy_submission::domain::repository::RepositoryError;
+    use uuid::Uuid;
 
     struct RepositoryTestContext {
         repository: ItemRepositoryImpl,
+        factory: ItemFactoryImpl,
         _container: ContainerAsync<Postgres>,
     }
 
@@ -43,9 +44,11 @@ mod repository_tests {
 
             let pool = PostgresConnectionPoolFactory::new(config).await;
             let repository = ItemRepositoryImpl::new(pool.clone());
+            let factory = ItemFactoryImpl::default();
 
             RepositoryTestContext {
                 repository,
+                factory,
                 _container: container,
             }
         }
@@ -54,12 +57,12 @@ mod repository_tests {
     #[tokio::test]
     async fn delete_unexisting_item() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = ItemFactory::try_create(1, "Pierogi".to_string())
+        let item = context.factory.try_create(1, "Pierogi".to_string())
             .expect("Failed to create item");
 
         context
             .repository
-            .delete_item(&item.id)
+            .delete_item(&item.table_id, &item.id)
             .await
             .expect("Failed to delete item");
     }
@@ -67,7 +70,7 @@ mod repository_tests {
     #[tokio::test]
     async fn delete_existing_item() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = ItemFactory::try_create(1, "Pierogi".to_string())
+        let item = context.factory.try_create(1, "Pierogi".to_string())
             .expect("Failed to create item");
 
         context
@@ -78,7 +81,7 @@ mod repository_tests {
 
         context
             .repository
-            .delete_item(&item.id)
+            .delete_item(&item.table_id, &item.id)
             .await
             .expect("Failed to delete item");
 
@@ -95,7 +98,7 @@ mod repository_tests {
     async fn create_item() {
         let context = RepositoryTestContext::create_test_context().await;
 
-        let item = ItemFactory::try_create(1, "Pierogi".to_string())
+        let item = context.factory.try_create(1, "Pierogi".to_string())
             .expect("Failed to create item");
 
         context
@@ -117,7 +120,7 @@ mod repository_tests {
     #[tokio::test]
     async fn create_items_transaction_fail() {
         let context = RepositoryTestContext::create_test_context().await;
-        let item = ItemFactory::try_create(1, "Pierogi".to_string())
+        let item = context.factory.try_create(1, "Pierogi".to_string())
             .expect("Failed to create item");
 
         let save_result = context
@@ -139,9 +142,9 @@ mod repository_tests {
     #[tokio::test]
     async fn create_items_transaction_same_table() {
         let context = RepositoryTestContext::create_test_context().await;
-        let first_item = ItemFactory::try_create(1, "Pierogi".to_string())
+        let first_item = context.factory.try_create(1, "Pierogi".to_string())
             .expect("Failed to create item");
-        let second_item = ItemFactory::try_create(1, "Schabowy".to_string())
+        let second_item = context.factory.try_create(1, "Schabowy".to_string())
             .expect("Failed to create item");
 
         context
@@ -164,9 +167,9 @@ mod repository_tests {
     #[tokio::test]
     async fn create_items_different_tables() {
         let context = RepositoryTestContext::create_test_context().await;
-        let first_item = ItemFactory::try_create(1,"Pierogi".to_string())
+        let first_item = context.factory.try_create(1,"Pierogi".to_string())
             .expect("Failed to create item");
-        let second_item = ItemFactory::try_create(2, "Schabowy".to_string())
+        let second_item = context.factory.try_create(2, "Schabowy".to_string())
             .expect("Failed to create item");
 
         context
@@ -243,6 +246,4 @@ mod repository_tests {
 
         assert_eq!(query_result, RepositoryError::MappingError(ItemValidationError::EmptyName.to_string()));
     }
-    
-    
 }

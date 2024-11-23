@@ -9,7 +9,7 @@ use uuid::Uuid;
 const QUERY_ITEM: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE id = $2 and table_id = $1";
 const QUERY_TABLE: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE table_id = $1";
 const INSERT_ITEM: &str = "INSERT INTO items (id, table_id, name, preparation_time) VALUES ($1, $2, $3, $4)";
-const DELETE_ITEM: &str = "DELETE FROM items WHERE id = $1";
+const DELETE_ITEM: &str = "DELETE FROM items WHERE id = $2 AND table_id = $1";
 
 #[derive(Clone)]
 pub struct ItemRepositoryImpl {
@@ -72,8 +72,9 @@ impl ItemRepository for ItemRepositoryImpl {
         Ok(())
     }
 
-    async fn delete_item(&self, item_id: &Uuid) -> Result<(), RepositoryError> {
+    async fn delete_item(&self, table_id: &i64, item_id: &Uuid) -> Result<(), RepositoryError> {
         sqlx::query(DELETE_ITEM)
+            .bind(table_id)
             .bind(item_id)
             .execute(&self.pool)
             .await
