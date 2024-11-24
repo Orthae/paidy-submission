@@ -16,7 +16,7 @@ impl ItemRouter {
     pub fn new(service: Arc<dyn ItemService + Send + Sync>) -> Router {
         
         Router::new()
-            .route("/tables/:table_id", post(create_items))
+            .route("/tables/:table_id/items", post(create_items))
             .route("/tables/:table_id/items", get(list_items))
             .route("/tables/:table_id/items/:item_id", get(get_item))
             .route("/tables/:table_id/items/:item_id", delete(delete_item))

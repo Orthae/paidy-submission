@@ -27,7 +27,7 @@ class ApplicationUser(FastHttpUser):
         items = self.client.get(f'v1/tables/{table}/items').json()['items']
         if len(items) == 0 or random.randint(0, 1) == 0:
             command = { "items": [{"name": random.choice(dishes)} for _ in range(max_order)] }
-            self.client.post(f'v1/tables/{table}', json=command)
+            self.client.post(f'v1/tables/{table}/items', json=command)
         else:
             item = random.choice(items)
             self.client.delete(f'v1/tables/{item["table_id"]}/items/{item["id"]}')

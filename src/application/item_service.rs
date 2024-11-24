@@ -117,12 +117,12 @@ impl From<ItemValidationError> for ApplicationError {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct CreateItemsCommand {
     pub items: Vec<CreateItemModel>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct CreateItemModel {
     pub name: String,
 }
