@@ -10,7 +10,7 @@ use testcontainers_modules::postgres::Postgres;
 mod repository_tests {
     use super::*;
     use chrono::Utc;
-    use paidy_submission::domain::item::{Item, ItemValidationError};
+    use paidy_submission::domain::item::Item;
     use paidy_submission::domain::item_factory::{ItemFactory, ItemFactoryImpl};
     use paidy_submission::domain::repository::RepositoryError;
     use uuid::Uuid;
@@ -42,7 +42,7 @@ mod repository_tests {
                 password: "qwerty".to_string(),
             };
 
-            let pool = PostgresConnectionPoolFactory::new(config).await;
+            let pool = PostgresConnectionPoolFactory::create(config).await;
             let repository = ItemRepositoryImpl::new(pool.clone());
             let factory = ItemFactoryImpl::default();
 

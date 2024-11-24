@@ -30,25 +30,25 @@ impl WebServer {
         let config = DatabaseConfiguration::load();
 
         info!("Creating database connection pool and running migrations");
-        let pool = PostgresConnectionPoolFactory::new(config).await;
+        let pool = PostgresConnectionPoolFactory::create(config).await;
 
         info!("Creating repository");
         let repository = Arc::new(ItemRepositoryImpl::new(pool));
 
         info!("Creating item factory");
-        let factory = Arc::new(ItemFactoryImpl::default());
+        let factory = Arc::new(ItemFactoryImpl);
 
         info!("Creating service");
         let application = Arc::new(ItemServiceImpl::new(repository, factory));
 
         info!("Creating router");
-        let router = ItemRouter::new(application.clone());
+        let router = ItemRouter::create(application.clone());
 
         let app = Router::new()
             .nest("/v1/", router)
             .route("/health", get(|| async { StatusCode::OK }))
-            .layer(TraceMiddleware::new())
-            .layer(RequestIdMiddleware::new());
+            .layer(TraceMiddleware::create())
+            .layer(RequestIdMiddleware::create());
 
         info!("Binding application server");
         let listener = TcpListener::bind("0.0.0.0:3000")

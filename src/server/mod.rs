@@ -1,3 +1,3 @@
 pub mod configuration;
 pub mod middleware;
-pub mod server;
+pub mod web_server;

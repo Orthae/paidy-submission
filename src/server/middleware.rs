@@ -10,24 +10,27 @@ use uuid::Uuid;
 
 const REQUEST_ID_HEADER: HeaderName = HeaderName::from_static("x-request-id");
 
+pub type RequestIdMiddlewareLayer = ServiceBuilder<
+    Stack<PropagateRequestIdLayer, Stack<SetRequestIdLayer<MakeRequestUuid>, Identity>>,
+>;
+
 pub struct RequestIdMiddleware;
 
 impl RequestIdMiddleware {
-    pub fn new() -> ServiceBuilder<
-        Stack<PropagateRequestIdLayer, Stack<SetRequestIdLayer<MakeRequestUuid>, Identity>>,
-    > {
+    pub fn create() -> RequestIdMiddlewareLayer {
         ServiceBuilder::new()
             .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, MakeRequestUuid))
             .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
     }
 }
 
+pub type TraceMiddlewareLayer =
+    ServiceBuilder<Stack<TraceLayer<HttpMakeClassifier, fn(&Request<Body>) -> Span>, Identity>>;
+
 pub struct TraceMiddleware;
 
 impl TraceMiddleware {
-    pub fn new(
-    ) -> ServiceBuilder<Stack<TraceLayer<HttpMakeClassifier, fn(&Request<Body>) -> Span>, Identity>>
-    {
+    pub fn create() -> TraceMiddlewareLayer {
         ServiceBuilder::new().layer(TraceLayer::new_for_http().make_span_with(trace_handler))
     }
 

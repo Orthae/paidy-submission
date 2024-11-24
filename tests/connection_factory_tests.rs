@@ -26,7 +26,7 @@ async fn should_create_pool() {
         password: "qwerty".to_string(),
     };
 
-    let pool = PostgresConnectionPoolFactory::new(config).await;
+    let pool = PostgresConnectionPoolFactory::create(config).await;
 
     let result: i64 = sqlx::query("SELECT COUNT(*) FROM items")
         .fetch_one(&pool)

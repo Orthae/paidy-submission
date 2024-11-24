@@ -39,7 +39,7 @@ impl ItemRepository for ItemRepositoryImpl {
             .fetch_optional(&self.pool)
             .await
             .inspect_err(|e| error!("Failed to query item. Error: {:?}", e))?
-            .map(|row| Item::try_from(row))
+            .map(Item::try_from)
             .transpose()
     }
 
@@ -50,11 +50,11 @@ impl ItemRepository for ItemRepositoryImpl {
             .await
             .inspect_err(|e| error!("Failed to query table. Error: {:?}", e))?
             .into_iter()
-            .map(|row| Item::try_from(row))
+            .map(Item::try_from)
             .collect()
     }
 
-    async fn save_items(&self, items: &Vec<Item>) -> Result<(), RepositoryError> {
+    async fn save_items(&self, items: &[Item]) -> Result<(), RepositoryError> {
         let mut transaction = self
             .pool
             .begin()
@@ -63,10 +63,10 @@ impl ItemRepository for ItemRepositoryImpl {
 
         for entity in items {
             sqlx::query(INSERT_ITEM)
-                .bind(&entity.id)
-                .bind(&entity.table_id)
+                .bind(entity.id)
+                .bind(entity.table_id)
                 .bind(&entity.name)
-                .bind(&entity.preparation_time)
+                .bind(entity.preparation_time)
                 .execute(&mut *transaction)
                 .await
                 .inspect_err(|e| error!("Inserting item failed. Error: {:?}", e))?;

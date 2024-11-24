@@ -13,7 +13,7 @@ use uuid::Uuid;
 pub struct ItemRouter;
 
 impl ItemRouter {
-    pub fn new(service: Arc<dyn ItemService + Send + Sync>) -> Router {
+    pub fn create(service: Arc<dyn ItemService + Send + Sync>) -> Router {
         Router::new()
             .route("/tables/:table_id/items", post(create_items))
             .route("/tables/:table_id/items", get(list_items))

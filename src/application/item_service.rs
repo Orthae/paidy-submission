@@ -70,10 +70,7 @@ impl ItemService for ItemServiceImpl {
 
         self.repository.save_items(&items).await?;
 
-        let models = items
-            .into_iter()
-            .map(|item| ItemModel::from(item))
-            .collect();
+        let models = items.into_iter().map(ItemModel::from).collect();
 
         Ok(models)
     }
@@ -88,7 +85,7 @@ impl ItemService for ItemServiceImpl {
             .repository
             .find_item(&table_id, &item_id)
             .await?
-            .map(|item| ItemModel::from(item))
+            .map(ItemModel::from)
             .ok_or(ApplicationError::ResourceNotFound)?;
 
         Ok(item)
@@ -102,7 +99,7 @@ impl ItemService for ItemServiceImpl {
             .find_items_by_table(&table_id)
             .await?
             .into_iter()
-            .map(|item| ItemModel::from(item))
+            .map(ItemModel::from)
             .collect();
 
         Ok(models)

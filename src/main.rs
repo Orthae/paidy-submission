@@ -1,4 +1,4 @@
-use paidy_submission::server::server::WebServer;
+use paidy_submission::server::web_server::WebServer;
 
 #[tokio::main]
 async fn main() {

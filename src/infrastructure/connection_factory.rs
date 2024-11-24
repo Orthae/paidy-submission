@@ -12,7 +12,7 @@ pub struct DatabaseConfiguration {
 pub struct PostgresConnectionPoolFactory;
 
 impl PostgresConnectionPoolFactory {
-    pub async fn new(config: DatabaseConfiguration) -> Pool<Postgres> {
+    pub async fn create(config: DatabaseConfiguration) -> Pool<Postgres> {
         let connection_options = PgConnectOptions::new()
             .host(&config.host)
             .port(config.port)

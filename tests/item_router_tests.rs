@@ -19,7 +19,7 @@ mod item_router_tests {
 
             let address = listener.local_addr().expect("Failed to get local address");
 
-            let router = ItemRouter::new(Arc::new(service));
+            let router = ItemRouter::create(Arc::new(service));
 
             tokio::spawn(async move {
                 axum::serve(listener, router).await.expect("Error");
