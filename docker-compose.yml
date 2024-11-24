@@ -16,6 +16,8 @@ services:
       POSTGRES_DB: ${PAIDY_DB_NAME}
       POSTGRES_USER: ${PAIDY_DB_USER}
       POSTGRES_PASSWORD: ${PAIDY_DB_PASSWORD}
+    cpu_count: 2
+    mem_limit: 4G
   application:
     container_name: paidy-server
     build:
@@ -37,6 +39,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
     depends_on:
       - database
+    cpu_count: 2
+    mem_limit: 4G
 
 networks:
   paidy-local:
