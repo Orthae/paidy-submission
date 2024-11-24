@@ -1,10 +1,16 @@
+# Paidy Interview Task
+This repository contains a solution for the Paidy interview task.
+
+
 ## Assumptions
 * Security is out of scope. It is assumed that the application is running in a secure environment behind API gateway or proxy like Envoy.
 * Table management is out of scope. Application support arbitrary number of tables, and they don't have to be created beforehand.
 In microservices architecture, table management can be handled by a separate service.
 * Menu management is out of scope. Item name is added by the staff during creation request.
+* Alerting and monitoring are out of scope, only simple tracing is in place. It is assumed that rest is handled by the infrastructure.
 * Item preparation time is calculated based on the current time plus random delta.
-* Pagination has not been implemented due to requirements to show all items.
+* Pagination has not been implemented due to requirement to show all items.
+* Table id has been kept even thought it is not required for some operations to adhere to the REST principles.
 
 ## Stack
 * Rust
@@ -111,7 +117,7 @@ Returns all items for the table.
     {
       "id": "01935d8f-d241-7c22-b619-7269b8d00d9e",
       "table_id": 0,
-      "name": "Pierogi",
+      "name": "Schabowe",
       "preparation_time": "2024-11-24T09:50:34.849416Z"
     }
   ]
