@@ -1,4 +1,4 @@
-use crate::application::item_service::{CreateItemsCommand, ItemModel, ItemService, ItemServiceImpl};
+use crate::application::item_service::{CreateItemsCommand, ItemModel, ItemService};
 use crate::web::errors::ServerError;
 use crate::web::response::{CreateItemsResponse, ListItemsResponse};
 use axum::extract::Json;
@@ -8,25 +8,19 @@ use axum::routing::{delete, get, post};
 use axum::Router;
 use axum_extra::extract::WithRejection;
 use std::sync::Arc;
-use sqlx::{Pool, Postgres};
 use uuid::Uuid;
-use crate::domain::item_factory::ItemFactoryImpl;
-use crate::infrastructure::item_repository::ItemRepositoryImpl;
 
 pub struct ItemRouter;
 
 impl ItemRouter {
-    pub fn new(pool: Pool<Postgres>) -> Router {
-        let repository = Arc::new(ItemRepositoryImpl::new(pool));
-        let factory = Arc::new(ItemFactoryImpl::default());
-        let application = Arc::new(ItemServiceImpl::new(repository, factory));
+    pub fn new(service: Arc<dyn ItemService + Send + Sync>) -> Router {
         
         Router::new()
             .route("/tables/:table_id", post(create_items))
             .route("/tables/:table_id/items", get(list_items))
             .route("/tables/:table_id/items/:item_id", get(get_item))
             .route("/tables/:table_id/items/:item_id", delete(delete_item))
-            .with_state(application)
+            .with_state(service)
     }
 }
 

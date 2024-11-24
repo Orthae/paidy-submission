@@ -5,10 +5,12 @@ use chrono::{DateTime, Utc};
 
 use std::sync::Arc;
 use async_trait::async_trait;
+use mockall::automock;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use uuid::Uuid;
 
+#[automock]
 #[async_trait]
 pub trait ItemService {
     async fn create_items(&self, table_id: i64, command: CreateItemsCommand) -> Result<Vec<ItemModel>, ApplicationError>;
@@ -17,7 +19,7 @@ pub trait ItemService {
     async fn delete_item(&self, table_id: i64, item_id: Uuid) -> Result<(), ApplicationError>;
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ApplicationError {
     InternalError,
     ValidationError(String),
@@ -125,7 +127,7 @@ pub struct CreateItemModel {
     pub name: String,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct ItemModel {
     pub id: Uuid,
     pub table_id: i64,

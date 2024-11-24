@@ -1,7 +1,5 @@
 pub mod application;
 pub mod domain;
 pub mod infrastructure;
-
-fn main() {
-    println!("Hello, world!");
-}
+pub mod web;
+pub mod server;
