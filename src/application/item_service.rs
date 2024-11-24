@@ -2,10 +2,11 @@ use crate::domain::item::{Item, ItemValidationError};
 use crate::domain::item_factory::ItemFactory;
 use crate::domain::repository::{ItemRepository, RepositoryError};
 use chrono::{DateTime, Utc};
-use log::info;
+
 use std::sync::Arc;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use tracing::info;
 use uuid::Uuid;
 
 #[async_trait]

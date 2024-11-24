@@ -1,9 +1,10 @@
 use crate::domain::item::{Item, ItemValidationError};
 use crate::domain::repository::{ItemRepository, RepositoryError};
 use async_trait::async_trait;
-use log::error;
+
 use sqlx::postgres::PgRow;
 use sqlx::{Pool, Postgres, Row};
+use tracing::error;
 use uuid::Uuid;
 
 const QUERY_ITEM: &str = "SELECT id, table_id, name, preparation_time FROM items WHERE id = $2 and table_id = $1";

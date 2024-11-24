@@ -3,6 +3,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Serialize;
+use tracing::warn;
 use crate::application::item_service::ApplicationError;
 
 pub enum ServerError {
@@ -34,13 +35,15 @@ impl IntoResponse for ServerError {
 }
 
 impl From<JsonRejection> for ServerError {
-    fn from(_: JsonRejection) -> Self {
+    fn from(error: JsonRejection) -> Self {
+        warn!("Request body rejected due: {}", error.to_string());
         ServerError::UnprocessableEntity("Failed to deserialize the JSON body.".to_string())
     }
 }
 
 impl From<PathRejection> for ServerError {
-    fn from(_: PathRejection) -> Self {
+    fn from(error: PathRejection) -> Self {
+        warn!("Request path rejected due: {}", error.to_string());
         ServerError::UnprocessableEntity("Failed to extract the path parameter.".to_string())
     }
 }
