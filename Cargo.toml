@@ -8,15 +8,20 @@ async-trait = "0.1.83"
 chrono = { version = "0.4.38", features = ["serde"] }
 rand = "0.8.5"
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono"] }
-uuid = { version = "1.11.0", features = ["serde", "v7"] }
-log = "0.4.22"
+uuid = { version = "1.11.0", features = ["serde", "v4", "v7"] }
 thiserror = "2.0.3"
 tokio = { version = "1.41.1", features = ["full"] }
 mockall = "0.13.1"
 axum = { version = "0.7.9", features = ["macros"] }
 axum-extra = { version = "0.9.6", features = [] }
 serde = { version = "1.0.215", features = ["derive"] }
+tower-http = { version = "0.6.2", features = ["request-id", "trace", "util"] }
+tower = "0.5.1"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+
 
 [dev-dependencies]
+reqwest = { version = "0.12.9", features = ["json"] }
 testcontainers = "0.23.1"
 testcontainers-modules = { version = "0.11.4", features = ["postgres"] }

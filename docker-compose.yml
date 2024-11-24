@@ -1,0 +1,45 @@
+services:
+  database:
+    container_name: paidy-database
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    networks:
+      - paidy-local
+    logging:
+      driver: json-file
+      options:
+        max-size: 50mb
+        max-file: 10
+    environment:
+      POSTGRES_DB: ${PAIDY_DB_NAME}
+      POSTGRES_USER: ${PAIDY_DB_USER}
+      POSTGRES_PASSWORD: ${PAIDY_DB_PASSWORD}
+  application:
+    container_name: paidy-server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - paidy-local
+    logging:
+      driver: json-file
+      options:
+        max-size: 50mb
+        max-file: 10
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+    depends_on:
+      - database
+
+networks:
+  paidy-local:
+    driver: bridge
+    attachable: true
+    name: paidy-local
