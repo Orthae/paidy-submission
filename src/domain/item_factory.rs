@@ -1,8 +1,8 @@
 use crate::domain::item::{Item, ItemValidationError};
 use chrono::{DateTime, SubsecRound, Utc};
+use mockall::automock;
 use rand::Rng;
 use std::time::Duration;
-use mockall::automock;
 use uuid::Uuid;
 
 #[automock]

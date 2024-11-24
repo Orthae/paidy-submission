@@ -25,7 +25,12 @@ impl Item {
             return Err(ItemValidationError::NegativeTableId);
         }
 
-        Ok(Item { id, table_id, name, preparation_time })
+        Ok(Item {
+            id,
+            table_id,
+            name,
+            preparation_time,
+        })
     }
 }
 
@@ -56,7 +61,7 @@ mod tests {
         assert_eq!(item.name, name);
         assert_eq!(item.preparation_time, preparation_time);
     }
-    
+
     #[test]
     fn should_not_create_item_with_empty_name() {
         let id = Uuid::new_v4();
@@ -68,7 +73,7 @@ mod tests {
 
         assert_eq!(result, Err(ItemValidationError::EmptyName));
     }
-    
+
     #[test]
     fn should_not_create_item_with_negative_table_id() {
         let id = Uuid::new_v4();

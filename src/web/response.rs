@@ -1,19 +1,19 @@
+use crate::application::item_service::ItemModel;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use uuid::Uuid;
-use crate::application::item_service::ItemModel;
 
 #[derive(Default, Serialize)]
 pub struct ItemDetailsResponse {
     pub id: Uuid,
     pub table_id: i64,
     pub name: String,
-    pub preparation_time: DateTime<Utc>
+    pub preparation_time: DateTime<Utc>,
 }
 
 #[derive(Default, Serialize)]
 pub struct CreateItemsResponse {
-    pub items: Vec<ItemModel>
+    pub items: Vec<ItemModel>,
 }
 
 impl From<Vec<ItemModel>> for CreateItemsResponse {
@@ -24,7 +24,7 @@ impl From<Vec<ItemModel>> for CreateItemsResponse {
 
 #[derive(Default, Serialize)]
 pub struct ListItemsResponse {
-    pub items: Vec<ItemModel>
+    pub items: Vec<ItemModel>,
 }
 
 impl From<Vec<ItemModel>> for ListItemsResponse {

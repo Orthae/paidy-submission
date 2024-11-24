@@ -1,10 +1,10 @@
+use crate::application::item_service::ApplicationError;
 use axum::extract::rejection::{JsonRejection, PathRejection};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Serialize;
 use tracing::warn;
-use crate::application::item_service::ApplicationError;
 
 pub enum ServerError {
     InternalServerError,
@@ -16,18 +16,30 @@ pub enum ServerError {
 impl IntoResponse for ServerError {
     fn into_response(self) -> axum::response::Response {
         let (status, body) = match self {
-            ServerError::InternalServerError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, ErrorResponse { message: "Internal server".to_string() })
-            },
-            ServerError::UnprocessableEntity(e) => {
-                (StatusCode::UNPROCESSABLE_ENTITY, ErrorResponse { message: e.to_string() })
-            }
-            ServerError::BadRequest(e) => {
-                (StatusCode::BAD_REQUEST, ErrorResponse { message: e.to_string() })
-            }
-            ServerError::NotFound => {
-                (StatusCode::NOT_FOUND, ErrorResponse { message: "Resource not found".to_string() })
-            }
+            ServerError::InternalServerError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                ErrorResponse {
+                    message: "Internal server".to_string(),
+                },
+            ),
+            ServerError::UnprocessableEntity(e) => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                ErrorResponse {
+                    message: e.to_string(),
+                },
+            ),
+            ServerError::BadRequest(e) => (
+                StatusCode::BAD_REQUEST,
+                ErrorResponse {
+                    message: e.to_string(),
+                },
+            ),
+            ServerError::NotFound => (
+                StatusCode::NOT_FOUND,
+                ErrorResponse {
+                    message: "Resource not found".to_string(),
+                },
+            ),
         };
 
         (status, Json(body)).into_response()

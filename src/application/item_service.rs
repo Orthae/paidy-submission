@@ -3,17 +3,21 @@ use crate::domain::item_factory::ItemFactory;
 use crate::domain::repository::{ItemRepository, RepositoryError};
 use chrono::{DateTime, Utc};
 
-use std::sync::Arc;
 use async_trait::async_trait;
 use mockall::automock;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tracing::info;
 use uuid::Uuid;
 
 #[automock]
 #[async_trait]
 pub trait ItemService {
-    async fn create_items(&self, table_id: i64, command: CreateItemsCommand) -> Result<Vec<ItemModel>, ApplicationError>;
+    async fn create_items(
+        &self,
+        table_id: i64,
+        command: CreateItemsCommand,
+    ) -> Result<Vec<ItemModel>, ApplicationError>;
     async fn get_item(&self, table_id: i64, item_id: Uuid) -> Result<ItemModel, ApplicationError>;
     async fn get_items(&self, table_id: i64) -> Result<Vec<ItemModel>, ApplicationError>;
     async fn delete_item(&self, table_id: i64, item_id: Uuid) -> Result<(), ApplicationError>;
@@ -34,9 +38,12 @@ pub struct ItemServiceImpl {
 impl ItemServiceImpl {
     pub fn new(
         repository: Arc<dyn ItemRepository + Send + Sync>,
-        factory: Arc<dyn ItemFactory + Send + Sync>
+        factory: Arc<dyn ItemFactory + Send + Sync>,
     ) -> Self {
-        Self { repository, factory }
+        Self {
+            repository,
+            factory,
+        }
     }
 }
 
@@ -48,9 +55,11 @@ impl ItemService for ItemServiceImpl {
         command: CreateItemsCommand,
     ) -> Result<Vec<ItemModel>, ApplicationError> {
         info!("Creating items from command: {:?}", command);
-        
+
         if command.items.is_empty() {
-            return Err(ApplicationError::ValidationError("Items list is empty.".to_string()));
+            return Err(ApplicationError::ValidationError(
+                "Items list is empty.".to_string(),
+            ));
         }
 
         let items = command
@@ -60,31 +69,34 @@ impl ItemService for ItemServiceImpl {
             .collect::<Result<Vec<Item>, ItemValidationError>>()?;
 
         self.repository.save_items(&items).await?;
-        
+
         let models = items
             .into_iter()
             .map(|item| ItemModel::from(item))
             .collect();
-        
+
         Ok(models)
     }
 
     async fn get_item(&self, table_id: i64, item_id: Uuid) -> Result<ItemModel, ApplicationError> {
-        info!("Getting item with id: {:?} for table: {:?}", item_id, table_id);
-    
+        info!(
+            "Getting item with id: {:?} for table: {:?}",
+            item_id, table_id
+        );
+
         let item = self
             .repository
             .find_item(&table_id, &item_id)
             .await?
             .map(|item| ItemModel::from(item))
             .ok_or(ApplicationError::ResourceNotFound)?;
-    
+
         Ok(item)
     }
-    
+
     async fn get_items(&self, table_id: i64) -> Result<Vec<ItemModel>, ApplicationError> {
         info!("Getting items for table: {:?}", table_id);
-    
+
         let models = self
             .repository
             .find_items_by_table(&table_id)
@@ -92,15 +104,18 @@ impl ItemService for ItemServiceImpl {
             .into_iter()
             .map(|item| ItemModel::from(item))
             .collect();
-    
+
         Ok(models)
     }
-    
+
     async fn delete_item(&self, table_id: i64, item_id: Uuid) -> Result<(), ApplicationError> {
-        info!("Deleting item with id: {:?} for table: {:?}", item_id, table_id);
-    
+        info!(
+            "Deleting item with id: {:?} for table: {:?}",
+            item_id, table_id
+        );
+
         self.repository.delete_item(&table_id, &item_id).await?;
-    
+
         Ok(())
     }
 }
