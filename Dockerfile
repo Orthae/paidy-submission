@@ -1,4 +1,4 @@
-FROM rust:1.82.0-bullseye as build
+FROM rust:1.82.0-bullseye AS build
 
 WORKDIR /build
 
@@ -6,7 +6,7 @@ COPY . .
 
 RUN cargo build --release
 
-FROM rust:1.82.0-bullseye as runtime
+FROM rust:1.82.0-bullseye AS runtime
 
 WORKDIR /app
 

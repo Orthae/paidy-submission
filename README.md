@@ -4,6 +4,7 @@
 In microservices architecture, table management can be handled by a separate service.
 * Menu management is out of scope. Item name is added by the staff during creation request.
 * Item preparation time is calculated based on the current time plus random delta.
+* Pagination has not been implemented due to requirements to show all items.
 
 ## Stack
 * Rust
@@ -67,7 +68,7 @@ Parameters:
 ### Create item
 Adds one or more items to the table.
 * Method: POST
-* Path: /table/:tableId/item
+* Path: /tables/:tableId/items
 #### Request Body:
 ```json
 {
@@ -96,7 +97,7 @@ Where `preparation_time` is the time when the item is going to be ready for serv
 ### Get items
 Returns all items for the table.
 * Method: GET
-* Path: /table/:tableId/items
+* Path: /tables/:tableId/items
 * Response Body:
 ```json
 {
@@ -121,7 +122,7 @@ Where `preparation_time` is the time when the item is going to be ready for serv
 ### Get item
 Returns a single item.
 * Method: GET
-* Path: /table/:tableId/item/:itemId
+* Path: /tables/:tableId/items/:itemId
 #### Response Body:
 ```json
 {
@@ -136,5 +137,5 @@ Where `preparation_time` is the time when the item is going to be ready for serv
 ### Delete item
 Deletes an item.
 * Method: DELETE
-* Path: /table/:tableId/item/:itemId
+* Path: /tables/:tableId/items/:itemId
 #### Response Body: NO CONTENT
